@@ -1,5 +1,5 @@
-name = "Local Collection Skins"
-description = "add Klei Skins to the system develop_all_skins"
+name = "导狗必死"
+description = "导狗必死全家"
 author = "zhnkc9@gmail.com"
 version = "0.2.34.beta"
 
