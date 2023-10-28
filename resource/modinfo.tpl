@@ -1,7 +1,7 @@
 name = "Local Collection Skins"
-description = "add Klei Skins to the system "
+description = "add Klei Skins to the system develop_all_skins"
 author = "zhnkc9@gmail.com"
-version = "0.2.3.beta"
+version = "0.2.33.develop"
 
 forumthread = ""
 

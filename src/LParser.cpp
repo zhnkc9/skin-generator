@@ -143,6 +143,7 @@ namespace LParser {
         // result 转 json
         json dup_result(result);
 
+//        regex re_dup1("_?([pd]|alt)$|_alt(?=_[a-z])|_p(?=_[a-z])|_d(?=_[a-z])|_alt(?=_item)");
         regex re_dup1("_?([pd]|alt)$|_alt(?=_[a-z])|_p(?=_[a-z])|_d(?=_[a-z])|_alt(?=_item)");
         std::vector<string> dict{"p", "_p", "d", "_d", "alt", "_alt","_alt_"};
         smatch match;
@@ -258,7 +259,7 @@ namespace LParser {
             } else if (clothing_type.count(type) > 0) {
                 kvs["assets"] = AssertBuilder::build(ResourceType::ITEM, prefix, origin_build_name);
             }
-            kvs["rarity"] = "\"ModMade\"";
+//            kvs["rarity"] = "\"ModMade\"";
             kvs["release_group"] = "groupid";
 
             // 只处理这两个

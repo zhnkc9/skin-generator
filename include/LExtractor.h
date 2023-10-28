@@ -32,7 +32,7 @@ struct LAccessor {
 
     LAccessor(const fs::path &folder, const string &path_prefix, const fs::path &zipPath) : \
         LAccessor(folder, path_prefix) {
-        LOG(info) << "zip path : " << zipPath;
+        LOG(info) << "zip path : " << zipPath.native();
         this->zipfile = zip_open(zipPath.string().c_str(), ZIP_RDONLY, nullptr);
     }
 
@@ -62,12 +62,12 @@ struct LAccessor {
     // path 必须是 / 分隔
     void transfer(const string &path, const fs::path &dest, bool process = false) {
 
-        LOG(info) << "transfer: <= " << folder / path_prefix / path;
-        LOG(info) << "transfer: => " << dest;
+        LOG(info) << "transfer: <= " << (folder / path_prefix / path).native();
+        LOG(info) << "transfer: => " << dest.native();
         auto &&f = folder / path_prefix / path;
         std::filesystem::create_directories(dest.parent_path());
         if (!doCopy(f, dest)) {
-            auto p = path_prefix + "/" + path;
+            auto &&p = path_prefix + "/" + path;
             LOG(info) << "transfer: copy failed, try unzip " << p;
             struct zip_file *file = zip_fopen(zipfile, p.c_str(), ZIP_FL_UNCHANGED);
             if (file != nullptr) {
@@ -169,7 +169,7 @@ public:
             return;
         }
 
-        LOG(info) << "File " << c_prefix << name  << " has been update to ZIP file " << std::endl;
+        LOG(info) << "File " << c_prefix << name << " has been update to ZIP file " << std::endl;
 
         delete[] header;
         delete[] name;

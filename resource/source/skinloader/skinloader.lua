@@ -29,6 +29,7 @@ function inv_replica.SetImage(self, item)
     end
     _SetImage(self, item)
 end
+
 if _G.TheNet:GetIsClient() then
     require("characterutil")
     local _SetSkinnedOvalPortraitTexture = SetSkinnedOvalPortraitTexture
@@ -38,23 +39,6 @@ if _G.TheNet:GetIsClient() then
         end
         return _SetSkinnedOvalPortraitTexture(image_widget, character, skin)
     end
-end
-SKIN_RARITY_COLORS["ModMade"]   = { 72 / 255, 208 / 255, 208 / 255, 1 } --#48D0D0
-SKIN_RARITY_COLORS["ModLocked"] = { 186 / 255, 7 / 255, 98 / 255, 1 }   --#BA0762
-MODSKINANNOUNCEMENT_COLOR       = { 64 / 255, 219 / 255, 234 / 255, 1 }
-local modded_order              = { ModMade = 31, ModLocked = 32 }
-local _oldCompareRarities       = CompareRarities
-CompareRarities                 = function(a, b)
-    local rarity1 = GetRarityForItem(a)
-    local rarity2 = GetRarityForItem(b)
-
-    if modded_order[rarity1] or modded_order[rarity2] then
-        local rarity1_sort = modded_order[rarity1] and modded_order[rarity1] or 1
-        local rarity2_sort = modded_order[rarity2] and modded_order[rarity2] or 1
-
-        return rarity1_sort < rarity2_sort
-    end
-    return _oldCompareRarities(a, b)
 end
 local function RegisterNoneSkin(skin_id, base_prefab)
     if not PREFAB_SKINS[base_prefab] then PREFAB_SKINS[base_prefab] = {} end
@@ -152,8 +136,6 @@ local function wrap_skin_data(skin_id, data)
     elseif is_type_emoji(data) and not table.contains(data.skin_tags, "EMOJI") then
         table.insert(data.skin_tags, "EMOJI")
     end
-    data.rarity = "ModMade"
-    data.rarity_modifier = "Modded"
     data.skip_item_gen = true
     data.skip_giftable_gen = true
     return skin_id, data
@@ -361,7 +343,9 @@ local function ApplySkin(_inst, name, skin)
     if SKIN_BUILDS[_inst.AnimState] then
         SKIN_BUILDS[_inst.AnimState]:set(build_name or "")
     end
-    _fn(_inst, build_name)
+    if _fn then
+        _fn(_inst, build_name)
+    end
 end
 local _ReskinEntity = Sim.ReskinEntity
 function Sim:ReskinEntity(targetGUID, currentskin, skin, idkwhat, userid, ...)
@@ -376,6 +360,7 @@ function Sim:ReskinEntity(targetGUID, currentskin, skin, idkwhat, userid, ...)
         end
     end
 end
+
 local _SpawnPrefab = SpawnPrefab
 function SpawnPrefab(name, skin, ...)
     local ent = _SpawnPrefab(name, skin, ...)

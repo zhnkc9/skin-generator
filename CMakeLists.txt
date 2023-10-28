@@ -16,15 +16,11 @@ message(STATUS "HEADER_FILES: ${HEADER_FILES}")
 message(STATUS "SOURCE_FILES: ${SOURCE_FILES}")
 include_directories(${CMAKE_SOURCE_DIR}/include)
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-# resource file
+message(STATUS "CMAKE_RUNTIME_OUTPUT_DIRECTORY: ${CMAKE_RUNTIME_OUTPUT_DIRECTORY}")
+file(REMOVE_RECURSE "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/resource")
 file(COPY
-        "${CMAKE_CURRENT_SOURCE_DIR}/resource/source.zip"
-        "${CMAKE_CURRENT_SOURCE_DIR}/resource/clothing.tpl"
-        "${CMAKE_CURRENT_SOURCE_DIR}/resource/skinprefabs.tpl"
-        "${CMAKE_CURRENT_SOURCE_DIR}/resource/register_inv.tpl"
-        "${CMAKE_CURRENT_SOURCE_DIR}/resource/modmain.tpl"
-        "${CMAKE_CURRENT_SOURCE_DIR}/resource/modinfo.tpl"
-        DESTINATION "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}/resource"
+        "${CMAKE_CURRENT_SOURCE_DIR}/resource"
+        DESTINATION "${CMAKE_RUNTIME_OUTPUT_DIRECTORY}"
 )
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 # BOOST
@@ -58,9 +54,9 @@ else ()
     message(FATAL_ERROR "LibZip not found.")
 endif ()
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-add_subdirectory(test_skins_generator)
+#add_subdirectory(test_skins_generator)
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
-add_library(skins_generator SHARED ${SOURCE_FILES})
+add_executable(skins_generator src/Generator.cpp ${HEADER_FILES} ${SOURCE_FILES})
 target_compile_options(skins_generator PUBLIC -O2)
 
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=

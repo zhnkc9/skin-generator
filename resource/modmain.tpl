@@ -27,7 +27,6 @@ function string:trip_that_prefix()
 end
 
 modimport("skinloader/skinloader")
-modimport("skinloader/skin_gui")
 modimport("localskinmain")
 
 initializeModMain()

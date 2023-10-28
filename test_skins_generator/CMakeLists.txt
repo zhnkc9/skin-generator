@@ -18,10 +18,7 @@ message(STATUS "test_skins_generator SOURCES: ${SOURCES}")
 
 # 添加测试可执行文件
 add_executable(test_skins_generator
-        TestBuild.cpp
-        TestGenerate.cpp
         ${SOURCES}
-        TestGenLuaCode.cpp
 )
 # -=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=-=
 target_link_libraries(test_skins_generator
