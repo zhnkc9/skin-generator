@@ -72,7 +72,9 @@ end
 local function registerSkin(skin_id, data)
     local _skin_id = skin_id and skin_id:trip_that_prefix()
     local c = TheInventory:CheckOwnership(_skin_id)
-    if not c then
+    if data and data.type and data.type == "base" and not c then
+        RegisterNoneSkin(skin_id, data.base_prefab)
+    elseif not c then
         ReplaceSkin(_skin_id, skin_id, data.base_prefab)
     end
     SKINS[skin_id] = true
