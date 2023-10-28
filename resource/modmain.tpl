@@ -6,15 +6,7 @@ if is_mim_enabled and _G.TheNet:GetServerGameMode() ~= "" then return end
 
 modimport("scripts/init")
 
-Assets = {
-    Asset("ANIM", "anim/modded_event_icon.zip"),
-    Asset("ANIM", "anim/modded_frame_BG.zip"),
-    Asset("ANIM", "anim/moddedskingift_popup.zip"),
-    --
-    Asset("ATLAS", "images/ms_buttons.xml"),
-    Asset("IMAGE", "images/ms_buttons.tex"),
-    --
-}
+Assets = {}
 
 local DEFAULT_PREFIX = "{{prefix}}"
 

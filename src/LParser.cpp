@@ -145,7 +145,7 @@ namespace LParser {
 
 //        regex re_dup1("_?([pd]|alt)$|_alt(?=_[a-z])|_p(?=_[a-z])|_d(?=_[a-z])|_alt(?=_item)");
         regex re_dup1("_?([pd]|alt)$|_alt(?=_[a-z])|_p(?=_[a-z])|_d(?=_[a-z])|_alt(?=_item)");
-        std::vector<string> dict{"p", "_p", "d", "_d", "alt", "_alt","_alt_"};
+        std::vector<string> dict{"p", "_p", "d", "_d", "alt", "_alt", "_alt_"};
         smatch match;
         auto *tmp = new string;
         auto compare = [](const std::string &a, const std::string &b) {
@@ -207,8 +207,9 @@ namespace LParser {
      * */
     void processSkinprefabs(const string &prefix, json &skinprefabs) {
 
-        std::unordered_set<string> skip_key = {"skin_tags", "base_prefab", "build_name_override", "feet_cuff_size", "assets", "fx_prefab",
-                                               "prefabs" ,"origin_skins","bigportrait_anim"};
+        std::unordered_set<string> skip_key = {"share_bigportrait_name", "skin_tags", "base_prefab", "build_name_override", "feet_cuff_size",
+                                               "assets", "fx_prefab",
+                                               "prefabs", "origin_skins", "bigportrait_anim", "skins"};
 
         std::unordered_set<string> clothing_type = {"body", "hand", "legs", "feet"};
 
@@ -244,15 +245,18 @@ namespace LParser {
                 kvs["assets"] = AssertBuilder::build(ResourceType::ITEM, prefix, origin_build_name);
             } else if (type == "base") {
                 json &skins = kvs["skins"];
+                kvs["share_bigportrait_name"] = "\"" + skinid + "\"";
                 AssertBuilder builder(prefix);
                 for (auto it = skins.begin(); it != skins.end(); ++it) {
                     auto ghost_id = it.value().get<string>();
-                    // 不处理
-                    if (ghost_id == "ghost_skin") continue;
+                    auto base_prefab = util::removeSurroundingChars(kvs["base_prefab"], "\"");
+                    if (ghost_id == "ghost_" + base_prefab or ghost_id == "ghost_" + base_prefab + "_build") {
+                        continue;
+                    }
                     // prefix
                     it.value() = prefix + ghost_id;
-                    if (it.key() == "normal_skin")
-                        builder.with(ResourceType::BIGPORTRAITS, ghost_id);
+//                    if (it.key() == "normal_skin")
+//                        builder.with(ResourceType::BIGPORTRAITS, ghost_id);
                     builder.with(ResourceType::ITEM, ghost_id);
                 }
                 kvs["assets"] = builder.build();

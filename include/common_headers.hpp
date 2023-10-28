@@ -53,7 +53,7 @@ private:
         );
         boost::log::core::get()->
                 set_filter(boost::log::trivial::severity
-                           >= boost::log::trivial::info);
+                           >= boost::log::trivial::debug);
         boost::log::add_common_attributes();
     }
 };

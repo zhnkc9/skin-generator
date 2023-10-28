@@ -223,12 +223,14 @@ function _env.initializeModMain()
             end
         end
 
-        if is_type_feet(data) then
-            registerClothing(skin_id, data)
-        elseif is_type_loading(data) then
-            registerMiscItems(skin_id, data)
-        elseif is_type_emoji(data) then
-            registerMiscOrEmoji(skin_id, data)
+        if skin_id and not TheInventory:CheckOwnership(skin_id:trip_that_prefix()) then
+            if is_type_feet(data) then
+                registerClothing(skin_id, data)
+            elseif is_type_loading(data) then
+                registerMiscItems(skin_id, data)
+            elseif is_type_emoji(data) then
+                registerMiscOrEmoji(skin_id, data)
+            end
         end
     end
 end
