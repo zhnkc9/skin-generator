@@ -3,7 +3,6 @@ _G = GLOBAL
 require = _G.require
 
 function mergeA2B(a, b)
-    -- 如果类型不对
     if type(a) ~= "table" or type(b) ~= "table" then return end
     for k, v in pairs(a) do
         b[k] = v
