@@ -64,3 +64,15 @@ function processIfNecessary()
 end
 
 processIfNecessary()
+
+
+GLOBAL.setfenv(1, GLOBAL)
+
+function abigail_flower_init_fn (inst, build_name)
+    if not TheWorld.ismastersim then
+        return
+    end
+    inst.AnimState:SetSkin(build_name, "abigail_flower_rework")
+    inst.components.inventoryitem:ChangeImageName(inst:GetSkinName())
+    inst.linked_skinname = string.gsub(build_name, "_flower", "")
+end
