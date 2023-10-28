@@ -54,7 +54,8 @@ function processIfNecessary()
     local c = fs and fs:read() or "";
     print("[ Local Skin Collection ] processIfNecessary:", p, c)
     if fs then fs:close() end;
-    if not c or c == "" then
+    c = c and c:gsub("%s", "") or c
+    if not c or c == "" or c == "0" then
         print("[ Local Skin Collection ] first running  ... ")
         transferInternal()
         fs = io.open(p, "w")

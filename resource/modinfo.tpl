@@ -11,7 +11,7 @@ dst_compatible = true
 forge_compatible = true
 gorge_compatible = true
 
-priority = 10
+priority = -1
 
 dont_starve_compatible = false
 reign_of_giants_compatible = false
