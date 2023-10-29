@@ -213,6 +213,8 @@ namespace LParser {
 
         std::unordered_set<string> clothing_type = {"body", "hand", "legs", "feet"};
 
+        regex item_type("^(.*?)_?(builder|item)$");
+
         // 用于匹配人物的正则
         regex characte("^.*(wathgrithr|wes|wanda|wortox|wendy|wormwood|woodie|willow|wolfgang|" \
                     "waxwell|wilson|webber|winona|wonkey|wurt|wickerbottom|wx78|warly|walter).*$");
@@ -227,6 +229,13 @@ namespace LParser {
             string pattern = kvs.contains("base_prefab") ? \
                     util::removeSurroundingChars(kvs["base_prefab"], "\"")
                     + "|" + skinid : skinid;
+
+            // 如果 skinid 后缀是item _item build _build
+            if (regex_search(skinid, match, item_type))
+                pattern += "|" + match[1];
+
+            LOG(info) << "processSkinprefabs:pattern:" << pattern << "; [1] " << match[1];
+
             regex dup("(?<=\")([^\"/]*?(" + pattern + ")[^\"]*?)(?=\")");
 
             string origin_build_name;

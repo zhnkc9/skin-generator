@@ -324,39 +324,34 @@ for name, fn in pairs(ProxySet.pst) do fns_call(name, fn, true) end
 local SKIN_BUILDS = {}
 local function ApplySkin(_inst, name, skin)
     _inst.skinname = skin
-    _inst.moddedskinname = skin
     local isGemPrefab, _, realprefab = name:find("^gemprefab_(.+)_%d+$")
     if isGemPrefab then
         name = realprefab
     end
-    local _fn
-    if (skin) then
-        _fn = rawget(_G, skin .. "_" .. "init" .. "_fn") or
-                rawget(_G, name .. "_" .. "init" .. "_fn")
-    else
-        _fn = rawget(_G, name .. "_clear_fn")
-    end
+    local _prefab = skin and Prefabs[skin] or nil
+    local _fn = _prefab and _prefab.init_fn or
+            skin and rawget(_G, name .. "_" .. "init" .. "_fn") or
+            rawget(_G, name .. "_clear_fn")
     if not _fn then
         local def_build = _inst.AnimState:GetBuild()
         rawset(_G, name .. "_" .. "init" .. "_fn",
                 function(__inst, build_name) basic_init_fn(__inst, build_name, def_build) end)
         _fn = rawget(_G, name .. "_" .. (skin and "init" or "clear") .. "_fn")
     end
-    local build_name = (Prefabs[skin] ~= nil and Prefabs[skin].build_name_override) or skin
-
+    local build_name = (_prefab and _prefab.build_name_override) or skin
     if SKIN_BUILDS[_inst.AnimState] then
         SKIN_BUILDS[_inst.AnimState]:set(build_name or "")
     end
-    if _fn then
-        _fn(_inst, build_name)
-    end
+    _fn(_inst, build_name)
 end
+
 local _ReskinEntity = Sim.ReskinEntity
 function Sim:ReskinEntity(targetGUID, currentskin, skin, idkwhat, userid, ...)
     _ReskinEntity(self, targetGUID, currentskin, skin, idkwhat, userid, ...)
     local inst = Ents[targetGUID]
     if inst == nil then return end
-    if not table.contains(JoinArrays(DST_CHARACTERLIST, MODCHARACTERLIST), inst.prefab) then
+    if skin and skin:start_with_that_prefix() and
+            not table.contains(JoinArrays(DST_CHARACTERLIST, MODCHARACTERLIST), inst.prefab) then
         ApplySkin(inst, inst.prefab, skin or nil)
     elseif skin == nil then
         if SKIN_BUILDS[inst.AnimState] then
@@ -373,4 +368,27 @@ function SpawnPrefab(name, skin, ...)
         ApplySkin(ent, name, skin)
     end
     return ent
+end
+
+local _AddAnimState = Entity.AddAnimState
+local _GetSkinBuild = AnimState.GetSkinBuild
+local _Remove = EntityScript.Remove
+function Entity:AddAnimState(...)
+    local guid = self:GetGUID()
+    local inst = Ents[guid]
+    local hasanimstate = inst.AnimState
+    local animstate = _AddAnimState(self, ...)
+    if inst and not hasanimstate then
+        SKIN_BUILDS[animstate] = net_string(guid, "xyandtc.build")
+    end
+    return animstate
+end
+function AnimState:GetSkinBuild(...)
+    return (SKIN_BUILDS[self] and SKIN_BUILDS[self]:value() ~= "" and SKIN_BUILDS[self]:value()) or _GetSkinBuild(self, ...)
+end
+function EntityScript:Remove(...)
+    if self.AnimState then
+        SKIN_BUILDS[self.AnimState] = nil
+    end
+    return _Remove(self, ...)
 end
