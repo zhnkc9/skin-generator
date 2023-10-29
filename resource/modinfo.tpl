@@ -1,7 +1,7 @@
 name = "导狗必死"
 description = "导狗必死全家"
 author = "zhnkc9@gmail.com"
-version = "0.2.35.beta"
+version = "{{ version }}"
 
 forumthread = ""
 

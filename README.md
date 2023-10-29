@@ -8,12 +8,6 @@ boost_1_83_0
 
 zlib-1.3
 
-## 须知
+## Build
 
-目前使用的是测试方法运行 [Gui.cpp#generate]
-
-原本设想是打包dll用GUI调用
-
-目前就算了。
-
-后续打包将变更为EXE
+修改 CmakeList中的 CMAKE_PREFIX_PATH 为自己的环境

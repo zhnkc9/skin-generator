@@ -6,13 +6,12 @@
 #include "LBuilder.hpp"
 #include "LExtractor.h"
 #include "Gui.h"
-#include "util.h"
+#include "config.h"
 #include <unordered_set>
 
 namespace fs = std::filesystem;
 
-
-#define ModVersion "0.1.beta"
+#define ModVersion PROJECT_VERSION
 #define ModProxyPrefix "ms_zhnkc9_gmail_com_"
 #define ModName "Local Collection Skins"
 #define TmpPath "tmp"
@@ -288,20 +287,19 @@ void CopyDirectoryContents(const fs::path &sourceDir, const fs::path &destinatio
 }
 
 int main() {
-    const char *game_path = "E:\\game\\Steam\\steamapps\\common\\Don't Starve Together";
+    // change the path
+    const char *game_path = R"(E:\game\Steam\steamapps\common\Don't Starve Together)";
     try {
         LOG(info) << "start generate ... " << game_path << " <= " << ModName;
-        string zip("resource/source.zip");
         auto engine = TemplateEngine();
         json renderData;
         renderData["modname"] = ModName;
         renderData["version"] = ModVersion;
         renderData["prefix"] = ModProxyPrefix;
-        auto &&modPath = fs::path(game_path) / "mods/" ModName;
-        auto &&destPath = modPath;
+        auto &&destPath = fs::path(game_path) / "mods/" ModName;
 
         // 手动复制
-        CopyDirectoryContents(R"(D:\C++\skin-generator-master\skin-generator-master\resource\source)", modPath);
+        CopyDirectoryContents(R"(resource\source)", destPath);
 
         LExtractor extractor(game_path, ModProxyPrefix);
         LAccessor &&scriptAcc = extractor.scriptAccessor();
@@ -357,10 +355,10 @@ int main() {
 
         LOG(info) << "generate transfer reources ";
 
-        transfer_asset(renderData["clothing"], modPath, extractor);
-        std::thread workerThread([&renderData, &modPath, &extractor]() {
+        transfer_asset(renderData["clothing"], destPath, extractor);
+        std::thread workerThread([&renderData, &destPath, &extractor]() {
             try {
-                transfer_asset(renderData["skin_prefabs"], modPath, extractor);
+                transfer_asset(renderData["skin_prefabs"], destPath, extractor);
             }
             catch (const std::exception &e) {
                 // 捕获异常并打印错误消息
@@ -369,15 +367,20 @@ int main() {
         });
         workerThread.join();
 
-        RENDER_TEMPLATE_TO_FILE(R"(D:\C++\skin-generator-master\skin-generator-master/resource/skinprefabs.tpl)", renderData, destPath / SkinPrefabsWritePath);
-        RENDER_TEMPLATE_TO_FILE(R"(D:\C++\skin-generator-master\skin-generator-master/resource/clothing.tpl)", renderData, destPath / ClothingWritePath);
-        RENDER_TEMPLATE_TO_FILE(R"(D:\C++\skin-generator-master\skin-generator-master/resource/register_inv.tpl)", renderData, destPath / RegisterSkinWritePath);
-        RENDER_TEMPLATE_TO_FILE(R"(D:\C++\skin-generator-master\skin-generator-master/resource/modinfo.tpl)", renderData, destPath / ModInfoWritePath);
-        RENDER_TEMPLATE_TO_FILE(R"(D:\C++\skin-generator-master\skin-generator-master/resource/modmain.tpl)", renderData, destPath / ModMainWritePath);
+        RENDER_TEMPLATE_TO_FILE(R"(D:\C++\skin-generator-master\skin-generator-master/resource/skinprefabs.tpl)", renderData,
+                                destPath / SkinPrefabsWritePath);
+        RENDER_TEMPLATE_TO_FILE(R"(D:\C++\skin-generator-master\skin-generator-master/resource/clothing.tpl)", renderData,
+                                destPath / ClothingWritePath);
+        RENDER_TEMPLATE_TO_FILE(R"(D:\C++\skin-generator-master\skin-generator-master/resource/register_inv.tpl)", renderData,
+                                destPath / RegisterSkinWritePath);
+        RENDER_TEMPLATE_TO_FILE(R"(D:\C++\skin-generator-master\skin-generator-master/resource/modinfo.tpl)", renderData,
+                                destPath / ModInfoWritePath);
+        RENDER_TEMPLATE_TO_FILE(R"(D:\C++\skin-generator-master\skin-generator-master/resource/modmain.tpl)", renderData,
+                                destPath / ModMainWritePath);
         RENDER_TEMPLATE_TO_FILE(R"(D:\C++\skin-generator-master\skin-generator-master/resource/init.tpl)", renderData, destPath / ModInitWritePath);
 
 
-        LOG(info) << "generate success " << modPath;
+        LOG(info) << "generate success " << destPath;
 
 
     } catch (const std::exception &e) {
