@@ -208,7 +208,7 @@ namespace LParser {
     void processSkinprefabs(const string &prefix, json &skinprefabs) {
 
         std::unordered_set<string> skip_key = {"share_bigportrait_name", "skin_tags", "base_prefab", "build_name_override", "feet_cuff_size",
-                                               "assets", "fx_prefab",
+                                               "assets", "fx_prefab", "init_fn",
                                                "prefabs", "origin_skins", "bigportrait_anim", "skins"};
 
         std::unordered_set<string> clothing_type = {"body", "hand", "legs", "feet"};
@@ -218,6 +218,8 @@ namespace LParser {
         // 用于匹配人物的正则
         regex characte("^.*(wathgrithr|wes|wanda|wortox|wendy|wormwood|woodie|willow|wolfgang|" \
                     "waxwell|wilson|webber|winona|wonkey|wurt|wickerbottom|wx78|warly|walter).*$");
+
+        regex re_init(R"((.*inst.*inst\s*,\s*)\"(.*?)\"(.*))");
 
         smatch match;
 
@@ -230,6 +232,7 @@ namespace LParser {
                     util::removeSurroundingChars(kvs["base_prefab"], "\"")
                     + "|" + skinid : skinid;
 
+
             // 如果 skinid 后缀是item _item build _build
             if (regex_search(skinid, match, item_type))
                 pattern += "|" + match[1];
@@ -239,6 +242,12 @@ namespace LParser {
             regex dup("(?<=\")([^\"/]*?(" + pattern + ")[^\"]*?)(?=\")");
 
             string origin_build_name;
+
+
+            if (kvs.contains("init_fn")) {
+                string &&init_fn = kvs["init_fn"];
+                kvs["init_fn"] = regex_replace(init_fn, re_init, "$1\"" + prefix + "$2\"$3");
+            }
 
             if (!kvs.contains("build_name_override")) {
                 origin_build_name = skinid;
