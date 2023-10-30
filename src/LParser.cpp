@@ -71,14 +71,16 @@ namespace LParser {
         regex re("^table\\.insert\\(prefs, CreatePrefabSkin\\(\"(\\w+?)\"");
         regex kv_re(R"(^\s*(\w+)\s*=\s*(.+),$)");
         regex skins_re(R"(\s*(\w+)\s*=\s*\"?(\w+)\"?)");
+        regex arr_re(R"((\w+))");
         smatch match;
         smatch value_match;
         smatch skins_match;
+        smatch grant_item_match;
         bool need_find;
         json result;
         json *v = nullptr;
         auto f =
-                [&match, &re, &need_find, &result, &v, &value_match, &kv_re, &skins_re, &skins_match](string &line) -> void {
+                [&match, &re, &need_find, &result, &v, &value_match, &kv_re, &skins_re, &skins_match ,&grant_item_match,&arr_re](string &line) -> void {
                     regex_search(line, match, re);
                     if (match[1].matched) {
                         // 拿到了数据
@@ -90,7 +92,15 @@ namespace LParser {
                             if (value_match[2].matched) {
                                 auto &v_k = value_match[1];
                                 auto &v_v = value_match[2];
-                                if (v_k == "skins") {
+
+                                if (v_k == "granted_items"){
+                                    for (sregex_iterator it(v_v.begin(), v_v.end(), arr_re); it != sregex_iterator(); ++it) {
+                                        grant_item_match = *it;
+                                        if (match.size() > 1) {
+                                            (*v)[v_k].push_back(grant_item_match[1]);
+                                        }
+                                    }
+                                } else if (v_k == "skins") {
                                     (*v)["origin_skins"] = json(v_v);
                                     // {ghost_skin = "ghost_walter", normal_skin = "walter_bee"}
                                     json skins;

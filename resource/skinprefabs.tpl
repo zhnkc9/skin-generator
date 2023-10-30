@@ -15,9 +15,11 @@ table.insert(prefs, CreatePrefabSkin("{{ prefix + skinid }}",{
     {{ key  }} = {{  dump(value) }} ,
 {% else if key == "base_prefab" %}
     {{ key  }} = {{ value }} ,
+{% else if key == "granted_items" %}
+    granted_items = { {% for v in value %} "{{prefix+v}}" , {% endfor %} },
 {% else if key == "skins" %}
     skins = { {% for sk,sv in value %}{{ sk }} = "{{sv}}" , {% endfor %} },
-{% else if key == "origin_skins" or key == "origin_build_name" or key == "bigportrait_anim"%}
+{% else if key == "origin_skins" or key == "origin_build_name" or key == "bigportrait_anim" or key == "granted_items"%}
 {% else %}
     {{ key }} = {{ value  }},
 {% endif %}
