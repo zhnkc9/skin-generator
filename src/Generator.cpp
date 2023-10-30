@@ -1,4 +1,4 @@
-Ôªø//
+//
 // Created by zhnkc9 on 2023/10/11.
 //
 #include "common_headers.hpp"
@@ -8,6 +8,7 @@
 #include "Gui.h"
 #include "config.h"
 #include <unordered_set>
+#include <shlobj.h>
 
 namespace fs = std::filesystem;
 
@@ -21,6 +22,21 @@ namespace fs = std::filesystem;
 #define ModInfoWritePath "modinfo.lua"
 #define ModMainWritePath "modmain.lua"
 #define ModInitWritePath "scripts/init.lua"
+
+
+[[maybe_unused]] char *selectFolder() {
+    BROWSEINFO bi = {nullptr};
+    bi.ulFlags = BIF_USENEWUI;
+    LPITEMIDLIST pidl = SHBrowseForFolder(&bi);
+
+    if (pidl != nullptr) {
+        char *path = new char[MAX_PATH];
+        SHGetPathFromIDList(pidl, path);
+        CoTaskMemFree(pidl);
+        return path;
+    }
+    return nullptr;
+}
 
 
 [[maybe_unused]] char *skins_data(const char *game_path) {
@@ -216,7 +232,7 @@ void transfer_asset(json &skin_prefabs, const fs::path &dest, LExtractor &extrac
 
     std::stringstream target;
 
-    // ËµÑÊ∫ê‰∏çÁªôÂÆöÔºåÂè™ËÉΩÁ¶ªÁ∫øÁî®
+    // ◊ ‘¥≤ª∏¯∂®£¨÷ªƒ‹¿Îœﬂ”√
     std::unordered_set<string> skip_type = {"base", "body", "hand", "legs", "feet"};
 
     for (auto &it: skin_prefabs.items()) {
@@ -266,11 +282,11 @@ void transfer_asset(json &skin_prefabs, const fs::path &dest, LExtractor &extrac
 void CopyDirectoryContents(const fs::path &sourceDir, const fs::path &destinationDir) {
     try {
         if (!fs::exists(destinationDir)) {
-            fs::create_directory(destinationDir);
+            fs::create_directories(destinationDir);
         }
 
         for (const auto &entry: fs::directory_iterator(sourceDir)) {
-            const fs::path sourceFile = entry.path();
+            const fs::path& sourceFile = entry.path();
             const fs::path destinationFile = destinationDir / sourceFile.filename();
 
             if (fs::is_directory(sourceFile)) {
@@ -283,22 +299,27 @@ void CopyDirectoryContents(const fs::path &sourceDir, const fs::path &destinatio
         }
     } catch (const std::exception &e) {
         std::cerr << "Error: " << e.what() << std::endl;
+        throw e;
     }
 }
 
 int main() {
-    // change the path
     const char *game_path = R"(E:\game\Steam\steamapps\common\Don't Starve Together)";
+//    const char *game_path = selectFolder();
     try {
         LOG(info) << "start generate ... " << game_path << " <= " << ModName;
+        if (game_path == nullptr) {
+            LOG(error) << "game_path is null";
+            return 1;
+        }
         auto engine = TemplateEngine();
         json renderData;
         renderData["modname"] = ModName;
         renderData["version"] = ModVersion;
         renderData["prefix"] = ModProxyPrefix;
-        auto &&destPath = fs::path(game_path) / "mods/" ModName;
+        auto &&destPath = fs::path(game_path) / "mods\\" ModName;
 
-        // ÊâãÂä®Â§çÂà∂
+        //  ÷∂Ø∏¥÷∆
         CopyDirectoryContents(R"(resource\source)", destPath);
 
         LExtractor extractor(game_path, ModProxyPrefix);
@@ -333,7 +354,7 @@ int main() {
             renderData["clothing"] = clothing;
         }
 
-        // ÂõæÁâáÊàëÂ∞±‰∏çÊ≥®ÂÜå‰∫ÜÔºåÁõ¥Êé•hookÁöÑkleiÊé•Âè£
+        // Õº∆¨Œ“æÕ≤ª◊¢≤·¡À£¨÷±Ω”hookµƒkleiΩ”ø⁄
 //        {
 //            AssertBuilder as(ModProxyPrefix);
 //            as.with(IMAGES, "inventoryimages1");
@@ -361,7 +382,7 @@ int main() {
                 transfer_asset(renderData["skin_prefabs"], destPath, extractor);
             }
             catch (const std::exception &e) {
-                // ÊçïËé∑ÂºÇÂ∏∏Âπ∂ÊâìÂç∞ÈîôËØØÊ∂àÊÅØ
+                // ≤∂ªÒ“Ï≥£≤¢¥Ú”°¥ÌŒÛœ˚œ¢
                 std::cerr << "error: " << e.what() << std::endl;
             }
         });
@@ -385,5 +406,6 @@ int main() {
 
     } catch (const std::exception &e) {
         LOG(error) << "Exception caught: " << e.what() << std::endl;
+        return 1;
     }
 }

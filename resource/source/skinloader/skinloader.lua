@@ -1,11 +1,11 @@
 local _env = env
 _G.setfenv(1, _G)
 
-setmetatable(STRINGS.NAMES, {
-    __index = function()
-        return ""
-    end
-})
+--setmetatable(STRINGS.NAMES, {
+--    __index = function()
+--        return ""
+--    end
+--})
 local function Proxy(name)
     local _fn = rawget(_G, name)
     local proxy = function(item, ...)
