@@ -66,12 +66,14 @@ end
 
 processIfNecessary()
 
-
 GLOBAL.setfenv(1, GLOBAL)
 
 function abigail_flower_init_fn (inst, build_name)
     if not TheWorld.ismastersim then
         return
+    end
+    if inst.flower_skin_id then
+        inst.flower_skin_id:set(inst.skin_id)
     end
     inst.AnimState:SetSkin(build_name, "abigail_flower_rework")
     inst.components.inventoryitem:ChangeImageName(inst:GetSkinName())

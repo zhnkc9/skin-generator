@@ -1,5 +1,5 @@
-name = "导狗必死"
-description = "导狗必死全家"
+name = "倒狗必死"
+description = "倒狗必死全家"
 author = "zhnkc9@gmail.com"
 version = "{{ version }}"
 

@@ -123,9 +123,6 @@ end
 local function wrap_skin_data(skin_id, data)
     if data.skin_tags == nil then data.skin_tags = {} end
 
-    if not table.contains(data.skin_tags, "MODDED") then
-        table.insert(data.skin_tags, "MODDED")
-    end
     if is_type_feet(data) then
         if not table.contains(data.skin_tags, "CLOTHING") then
             table.insert(data.skin_tags, "CLOTHING")

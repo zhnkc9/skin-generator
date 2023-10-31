@@ -210,12 +210,19 @@ json prefab_skin_build(json skins, json &defs) {
     return builds;
 }
 
-void process_prefab(const string &prefix, json &skin_prefabs, json &builds) {
+void process_prefab(const string &prefix, json &skin_prefabs, json &builds, std::unordered_set<string> &filter) {
     LParser::processSkinprefabs(prefix, skin_prefabs);
-    cout << "skin_prefabs<<R<<size " << skin_prefabs.size() << endl;
+
+    auto enable_filter = filter.size() > 0;
+
+    cout << "skin_prefabs<<BEFORE_R<<size " << skin_prefabs.size() << endl;
 
     for (auto it = skin_prefabs.begin(); it != skin_prefabs.end();) {
-        if (!builds.contains(it.key())) {
+
+        if (enable_filter and filter.count(it.key()) == 0) {
+            cout << "skin_prefabs delete by filter: " << it.key() << endl;
+            it = skin_prefabs.erase(it);
+        }else if (!builds.contains(it.key())) {
             cout << "skin_prefabs delete: " << it.key() << endl;
             it = skin_prefabs.erase(it);
         } else
@@ -226,13 +233,17 @@ void process_prefab(const string &prefix, json &skin_prefabs, json &builds) {
 }
 
 void transfer_asset(json &skin_prefabs, const fs::path &dest, LExtractor &extractor) {
+
+    if (skin_prefabs.size() == 0)
+        return;
+
     auto &&animAcc = extractor.animAccessor();
     auto &&bigAcc = extractor.bigportraitsAccessor();
     auto &&xmlAcc = extractor.xmlAccessor();
 
     std::stringstream target;
 
-    // ◊ ‘¥≤ª∏¯∂®£¨÷ªƒ‹¿Îœﬂ”√
+    // ËµÑÊ∫ê‰∏çÁªôÂÆöÔºåÂè™ËÉΩÁ¶ªÁ∫øÁî®
     std::unordered_set<string> skip_type = {"base", "body", "hand", "legs", "feet"};
 
     for (auto &it: skin_prefabs.items()) {
@@ -286,7 +297,7 @@ void CopyDirectoryContents(const fs::path &sourceDir, const fs::path &destinatio
         }
 
         for (const auto &entry: fs::directory_iterator(sourceDir)) {
-            const fs::path& sourceFile = entry.path();
+            const fs::path &sourceFile = entry.path();
             const fs::path destinationFile = destinationDir / sourceFile.filename();
 
             if (fs::is_directory(sourceFile)) {
@@ -319,7 +330,7 @@ int main() {
         renderData["prefix"] = ModProxyPrefix;
         auto &&destPath = fs::path(game_path) / "mods\\" ModName;
 
-        //  ÷∂Ø∏¥÷∆
+        // ÊâãÂä®Â§çÂà∂
         CopyDirectoryContents(R"(resource\source)", destPath);
 
         LExtractor extractor(game_path, ModProxyPrefix);
@@ -329,15 +340,18 @@ int main() {
         auto skins_defs_file = TmpPath "/skins_defs_data.lua";
         auto skinprefabs_file = TmpPath "/skinprefabs.lua";
         auto clothing_file = TmpPath "/clothing.lua";
+        auto chinese_po_file = TmpPath "/chinese_s.po";
 
         {
             TRANSFER_IF_NOT_EXIST("prefabskins.lua", prefabskins_file, scriptAcc.transfer, false)
             TRANSFER_IF_NOT_EXIST("skins_defs_data.lua", skins_defs_file, scriptAcc.transfer, false)
             TRANSFER_IF_NOT_EXIST("prefabs/skinprefabs.lua", skinprefabs_file, scriptAcc.transfer, false)
             TRANSFER_IF_NOT_EXIST("clothing.lua", clothing_file, scriptAcc.transfer, false)
+            TRANSFER_IF_NOT_EXIST("languages/chinese_s.po", chinese_po_file, scriptAcc.transfer, false)
         }
 
         {
+            json &&chinese_po = LParser::chinesepo(chinese_po_file);
             json &&prefabskins = LParser::prefabskins(prefabskins_file);
             json &&skinsdefsdata = LParser::distinctSkinsdefsdata(skins_defs_file);
 
@@ -345,16 +359,35 @@ int main() {
             json prefab_builds = prefab_skin_build(skins, skinsdefsdata);
 
             json all_builds = flat_defs(skinsdefsdata);
+
+            ifstream filter_file("resource/filter.txt");
+            std::unordered_set<string> filter;
+            if (filter_file.is_open()) {
+                string line;
+                while (getline(filter_file, line)) {
+                    if (chinese_po.contains(line)) {
+                        LOG(debug) << "filter item: " << chinese_po[line];
+                        filter.insert(chinese_po[line]);
+                    }
+                    LOG(debug) << "filter item: " << line;
+                    filter.insert(line);
+                }
+            }
+            LOG(debug) << "filter: " << json(filter);
+
             json &&skin_prefabs = LParser::skinprefabs(skinprefabs_file);
-            process_prefab("" ModProxyPrefix, skin_prefabs, prefab_builds);
+            process_prefab("" ModProxyPrefix, skin_prefabs, prefab_builds, filter);
+            LOG(info) << "generate transfer resource33 ";
             renderData["skin_prefabs"] = skin_prefabs;
 
             json &&clothing = LParser::clothing(clothing_file);
-            process_prefab(ModProxyPrefix, clothing, all_builds);
+            LOG(info) << "generate transfer resource1 ";
+            process_prefab(ModProxyPrefix, clothing, all_builds, filter);
+            LOG(info) << "generate transfer resource2 ";
             renderData["clothing"] = clothing;
         }
 
-        // Õº∆¨Œ“æÕ≤ª◊¢≤·¡À£¨÷±Ω”hookµƒkleiΩ”ø⁄
+        // ÂõæÁâáÊàëÂ∞±‰∏çÊ≥®ÂÜå‰∫ÜÔºåÁõ¥Êé•hookÁöÑkleiÊé•Âè£
 //        {
 //            AssertBuilder as(ModProxyPrefix);
 //            as.with(IMAGES, "inventoryimages1");
@@ -374,7 +407,7 @@ int main() {
 //            renderData["inv3"] = inv3;
 //        }
 
-        LOG(info) << "generate transfer reources ";
+        LOG(info) << "generate transfer resource ";
 
         transfer_asset(renderData["clothing"], destPath, extractor);
         std::thread workerThread([&renderData, &destPath, &extractor]() {
@@ -382,11 +415,13 @@ int main() {
                 transfer_asset(renderData["skin_prefabs"], destPath, extractor);
             }
             catch (const std::exception &e) {
-                // ≤∂ªÒ“Ï≥£≤¢¥Ú”°¥ÌŒÛœ˚œ¢
+                // ÊçïËé∑ÂºÇÂ∏∏Âπ∂ÊâìÂç∞ÈîôËØØÊ∂àÊÅØ
                 std::cerr << "error: " << e.what() << std::endl;
             }
         });
         workerThread.join();
+
+        LOG(info) << "render data .....";
 
         RENDER_TEMPLATE_TO_FILE(R"(D:\C++\skin-generator-master\skin-generator-master/resource/skinprefabs.tpl)", renderData,
                                 destPath / SkinPrefabsWritePath);

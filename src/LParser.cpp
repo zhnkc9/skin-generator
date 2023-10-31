@@ -135,6 +135,7 @@ namespace LParser {
                         match = *it;
                         ++it;
                         result[match[2]] = match[3];
+                        result[match[3]] = match[2];
                         matched = true;
                     }
                     return matched;
