@@ -51,9 +51,12 @@ private:
                 std::cout,
                 boost::log::keywords::format = "[%TimeStamp%] [%Severity%] %Message%"
         );
+
+        logging::add_file_log("skins_generator.log");
+
         boost::log::core::get()->
                 set_filter(boost::log::trivial::severity
-                           >= boost::log::trivial::debug);
+                           >= boost::log::trivial::info);
         boost::log::add_common_attributes();
     }
 };

@@ -10,6 +10,7 @@
 #include <unordered_set>
 #include <shlobj.h>
 #include <codecvt>
+#include <future>
 
 namespace fs = std::filesystem;
 
@@ -244,28 +245,28 @@ json prefab_skin_build(json skins, json &defs) {
 void process_prefab(const string &prefix, json &skin_prefabs, json &builds, std::unordered_set<string> &filter) {
     LParser::processSkinprefabs(prefix, skin_prefabs);
 
-    auto enable_filter = 0 < filter.size();
+    auto enable_filter = !filter.empty();
 
-    cout << "skin_prefabs<<BEFORE_R<<size " << skin_prefabs.size() << endl;
+    LOG(info) << "skin_prefabs size " << skin_prefabs.size() << endl;
 
     for (auto it = skin_prefabs.begin(); it != skin_prefabs.end();) {
 
         if (enable_filter and filter.count(it.key()) == 0) {
-            cout << "skin_prefabs delete by filter: " << it.key() << endl;
+            LOG(debug) << "skin_prefabs delete by filter: " << it.key() << endl;
             it = skin_prefabs.erase(it);
-        }else if (!builds.contains(it.key())) {
-            cout << "skin_prefabs delete: " << it.key() << endl;
+        } else if (!builds.contains(it.key())) {
+            LOG(debug) << "skin_prefabs delete: " << it.key() << endl;
             it = skin_prefabs.erase(it);
         } else
             ++it;
 
     }
-    cout << "skin_prefabs<<R<<size " << skin_prefabs.size() << endl;
+    LOG(info) << "skin_prefabs << R << size " << skin_prefabs.size() << endl;
 }
 
 void transfer_asset(json &skin_prefabs, const fs::path &dest, LExtractor &extractor) {
 
-    if (skin_prefabs.size() == 0)
+    if (skin_prefabs.empty())
         return;
 
     auto &&animAcc = extractor.animAccessor();
@@ -409,13 +410,10 @@ int main() {
 
             json &&skin_prefabs = LParser::skinprefabs(skinprefabs_file);
             process_prefab("" ModProxyPrefix, skin_prefabs, prefab_builds, filter);
-            LOG(info) << "generate transfer resource33 ";
             renderData["skin_prefabs"] = skin_prefabs;
 
             json &&clothing = LParser::clothing(clothing_file);
-            LOG(info) << "generate transfer resource1 ";
             process_prefab(ModProxyPrefix, clothing, all_builds, filter);
-            LOG(info) << "generate transfer resource2 ";
             renderData["clothing"] = clothing;
         }
 
@@ -441,18 +439,29 @@ int main() {
 
         LOG(info) << "generate transfer resource ";
 
-        std::thread workerThread([&renderData, &destPath, &extractor]() {
+        std::promise<int> promiseObj;
+        std::future<int> futureObj = promiseObj.get_future();
+
+        // 启动一个线程执行任务，并将 promise 传递给线程
+        std::thread workerThread([promiseObj = std::move(promiseObj), &renderData, &destPath, &extractor]() mutable {
+            // 执行任务，将结果通过 promise 设置
             try {
                 transfer_asset(renderData["skin_prefabs"], destPath, extractor);
+                promiseObj.set_value(0);
             }
             catch (const std::exception &e) {
                 // 捕获异常并打印错误消息
                 std::cerr << "error: " << e.what() << std::endl;
+                promiseObj.set_value(1);
             }
         });
         transfer_asset(renderData["clothing"], destPath, extractor);
-        workerThread.join();
 
+        int rs = futureObj.get();
+        workerThread.join();
+        if (rs == 1) {
+            return 1;
+        }
         LOG(info) << "render data .....";
 
         RENDER_TEMPLATE_TO_FILE(R"(./resource/skinprefabs.tpl)", renderData,
@@ -467,11 +476,13 @@ int main() {
                                 destPath / ModMainWritePath);
         RENDER_TEMPLATE_TO_FILE(R"(./resource//init.tpl)", renderData, destPath / ModInitWritePath);
 
-        LOG(info) << "generate success " << destPath;
+        LOG(info) << "generate to " << destPath;
+        LOG(info) << "Success ! ";
         std::cin.get(); // 等待用户输入
 
     } catch (const std::exception &e) {
         LOG(error) << "Exception caught: " << e.what() << std::endl;
+        LOG(error) << "Fail ! ";
         return 1;
     }
 }

@@ -24,7 +24,7 @@ namespace LParser {
             }
         };
         util::processFileWithLine(ifs, bs, cs, f);
-        LOG(info) << "skindef::R<<len:" << result.size();
+        LOG(info) << "skindef :: L < " << result.size() << " >";
         return result;
     }
 
@@ -80,7 +80,8 @@ namespace LParser {
         json result;
         json *v = nullptr;
         auto f =
-                [&match, &re, &need_find, &result, &v, &value_match, &kv_re, &skins_re, &skins_match ,&grant_item_match,&arr_re](string &line) -> void {
+                [&match, &re, &need_find, &result, &v, &value_match, &kv_re, &skins_re, &skins_match, &grant_item_match, &arr_re](
+                        string &line) -> void {
                     regex_search(line, match, re);
                     if (match[1].matched) {
                         // 拿到了数据
@@ -93,7 +94,7 @@ namespace LParser {
                                 auto &v_k = value_match[1];
                                 auto &v_v = value_match[2];
 
-                                if (v_k == "granted_items"){
+                                if (v_k == "granted_items") {
                                     for (sregex_iterator it(v_v.begin(), v_v.end(), arr_re); it != sregex_iterator(); ++it) {
                                         grant_item_match = *it;
                                         if (match.size() > 1) {
@@ -168,7 +169,7 @@ namespace LParser {
             LOG(debug) << "skindef::distinct::process:" << first;
             *tmp = regex_replace(first, re_dup1, "", regex_constants::format_first_only);
             if (*tmp != first and dup_result.contains(*tmp)) {
-                LOG(info) << "skindef::distinct::matched:" << first;
+                LOG(debug) << "skindef::distinct::matched:" << first;
                 dup_result.erase(first);
                 continue;
             }
@@ -199,7 +200,7 @@ namespace LParser {
                     LOG(debug) << "skindef::distinct::arr::process:" << arr[i] << " " << arr[z];
                     bool b = util::strDistanceChecker(arr[i], arr[z], dict, 0, 1);
                     if (b) {
-                        LOG(info) << "skindef::distinct::matched:" << arr[z];
+                        LOG(debug) << "skindef::distinct::matched:" << arr[z];
                         dup_arr.erase(std::remove(dup_arr.begin(), dup_arr.end(), arr[z]), dup_arr.end());
                         break;
                     }
@@ -248,7 +249,7 @@ namespace LParser {
             if (regex_search(skinid, match, item_type))
                 pattern += "|" + match[1];
 
-            LOG(info) << "processSkinprefabs:pattern:" << pattern << "; [1] " << match[1];
+            LOG(debug) << "processSkinprefabs:pattern:" << pattern << "; [1] " << match[1];
 
             regex dup("(?<=\")([^\"/]*?(" + pattern + ")[^\"]*?)(?=\")");
 
