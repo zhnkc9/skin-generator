@@ -376,11 +376,16 @@ int main() {
         auto chinese_po_file = TmpPath "/chinese_s.po";
 
         {
-            TRANSFER_IF_NOT_EXIST("prefabskins.lua", prefabskins_file, scriptAcc.transfer, false)
-            TRANSFER_IF_NOT_EXIST("skins_defs_data.lua", skins_defs_file, scriptAcc.transfer, false)
-            TRANSFER_IF_NOT_EXIST("prefabs/skinprefabs.lua", skinprefabs_file, scriptAcc.transfer, false)
-            TRANSFER_IF_NOT_EXIST("clothing.lua", clothing_file, scriptAcc.transfer, false)
-            TRANSFER_IF_NOT_EXIST("languages/chinese_s.po", chinese_po_file, scriptAcc.transfer, false)
+            scriptAcc.transfer("prefabskins.lua", prefabskins_file, false);
+            scriptAcc.transfer("skins_defs_data.lua", skins_defs_file, false);
+            scriptAcc.transfer("clothing.lua", clothing_file, false);
+            scriptAcc.transfer("prefabs/skinprefabs.lua", skinprefabs_file, false);
+            scriptAcc.transfer("languages/chinese_s.po", chinese_po_file, false);
+//            TRANSFER_IF_NOT_EXIST("prefabskins.lua", prefabskins_file, scriptAcc.transfer, false)
+//            TRANSFER_IF_NOT_EXIST("skins_defs_data.lua", skins_defs_file, scriptAcc.transfer, false)
+//            TRANSFER_IF_NOT_EXIST("prefabs/skinprefabs.lua", skinprefabs_file, scriptAcc.transfer, false)
+//            TRANSFER_IF_NOT_EXIST("clothing.lua", clothing_file, scriptAcc.transfer, false)
+//            TRANSFER_IF_NOT_EXIST("languages/chinese_s.po", chinese_po_file, scriptAcc.transfer, false)
         }
 
         {
