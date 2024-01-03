@@ -9,6 +9,7 @@
 #include "config.h"
 #include <unordered_set>
 #include <shlobj.h>
+#include <codecvt>
 
 namespace fs = std::filesystem;
 
@@ -24,20 +25,50 @@ namespace fs = std::filesystem;
 #define ModInitWritePath "scripts/init.lua"
 
 
-[[maybe_unused]] char *selectFolder() {
-    BROWSEINFO bi = {nullptr};
-    bi.ulFlags = BIF_USENEWUI;
-    LPITEMIDLIST pidl = SHBrowseForFolder(&bi);
-
-    if (pidl != nullptr) {
-        char *path = new char[MAX_PATH];
-        SHGetPathFromIDList(pidl, path);
-        CoTaskMemFree(pidl);
-        return path;
-    }
-    return nullptr;
+std::string ConvertPWSTRToString(PWSTR wideStr) {
+    std::wstring_convert<std::codecvt_utf8<wchar_t>> converter;
+    return converter.to_bytes(wideStr);
 }
 
+std::string GetFilePathFromFileDialog() {
+
+    CoInitializeEx(nullptr, COINIT_APARTMENTTHREADED | COINIT_DISABLE_OLE1DDE);
+
+    IFileDialog *pFileDialog;
+    HRESULT hr = CoCreateInstance(CLSID_FileOpenDialog, nullptr, CLSCTX_ALL, IID_IFileDialog, (void **) &pFileDialog);
+    std::string str;
+    if (SUCCEEDED(hr)) {
+        // 设置文件对话框选项，如果需要的话
+        DWORD dwOptions;
+        pFileDialog->GetOptions(&dwOptions);
+        pFileDialog->SetOptions(dwOptions | FOS_PICKFOLDERS);
+
+        // 显示文件对话框
+        hr = pFileDialog->Show(nullptr);
+
+        if (SUCCEEDED(hr)) {
+            IShellItem *pItem;
+            hr = pFileDialog->GetResult(&pItem);
+
+            if (SUCCEEDED(hr)) {
+                PWSTR pszFilePath;
+                hr = pItem->GetDisplayName(SIGDN_FILESYSPATH, &pszFilePath);
+
+                if (SUCCEEDED(hr)) {
+                    // 将 PWSTR 转换为 std::string
+                    str = ConvertPWSTRToString(pszFilePath);
+
+                    // 释放 pItem 对象
+                    pItem->Release();
+                }
+            }
+        }
+        pFileDialog->Release();
+    }
+
+    // 如果出现错误或用户取消操作，返回空字符串
+    return str;
+}
 
 [[maybe_unused]] char *skins_data(const char *game_path) {
     try {
@@ -147,7 +178,7 @@ public:
         std::ifstream templateStream(templateFile);                              \
         if (!templateStream.is_open()) {                                         \
             LOG(error) << "Error opening template file: " << templateFile << std::endl; \
-            break;                                                               \
+            return 2;                                                               \
         }                                                                        \
         std::string templateStr((std::istreambuf_iterator<char>(templateStream)),  \
                                 std::istreambuf_iterator<char>());                 \
@@ -213,7 +244,7 @@ json prefab_skin_build(json skins, json &defs) {
 void process_prefab(const string &prefix, json &skin_prefabs, json &builds, std::unordered_set<string> &filter) {
     LParser::processSkinprefabs(prefix, skin_prefabs);
 
-    auto enable_filter = filter.size() > 0;
+    auto enable_filter = 0 < filter.size();
 
     cout << "skin_prefabs<<BEFORE_R<<size " << skin_prefabs.size() << endl;
 
@@ -315,11 +346,12 @@ void CopyDirectoryContents(const fs::path &sourceDir, const fs::path &destinatio
 }
 
 int main() {
-    const char *game_path = R"(E:\game\Steam\steamapps\common\Don't Starve Together)";
+//    const auto game_path = R"(E:\game\Steam\steamapps\common\Don't Starve Together)";
+    const auto game_path = GetFilePathFromFileDialog();
 //    const char *game_path = selectFolder();
     try {
         LOG(info) << "start generate ... " << game_path << " <= " << ModName;
-        if (game_path == nullptr) {
+        if (game_path.empty()) {
             LOG(error) << "game_path is null";
             return 1;
         }
@@ -409,7 +441,6 @@ int main() {
 
         LOG(info) << "generate transfer resource ";
 
-        transfer_asset(renderData["clothing"], destPath, extractor);
         std::thread workerThread([&renderData, &destPath, &extractor]() {
             try {
                 transfer_asset(renderData["skin_prefabs"], destPath, extractor);
@@ -419,25 +450,25 @@ int main() {
                 std::cerr << "error: " << e.what() << std::endl;
             }
         });
+        transfer_asset(renderData["clothing"], destPath, extractor);
         workerThread.join();
 
         LOG(info) << "render data .....";
 
-        RENDER_TEMPLATE_TO_FILE(R"(D:\C++\skin-generator-master\skin-generator-master/resource/skinprefabs.tpl)", renderData,
+        RENDER_TEMPLATE_TO_FILE(R"(./resource/skinprefabs.tpl)", renderData,
                                 destPath / SkinPrefabsWritePath);
-        RENDER_TEMPLATE_TO_FILE(R"(D:\C++\skin-generator-master\skin-generator-master/resource/clothing.tpl)", renderData,
+        RENDER_TEMPLATE_TO_FILE(R"(./resource/clothing.tpl)", renderData,
                                 destPath / ClothingWritePath);
-        RENDER_TEMPLATE_TO_FILE(R"(D:\C++\skin-generator-master\skin-generator-master/resource/register_inv.tpl)", renderData,
+        RENDER_TEMPLATE_TO_FILE(R"(./resource/register_inv.tpl)", renderData,
                                 destPath / RegisterSkinWritePath);
-        RENDER_TEMPLATE_TO_FILE(R"(D:\C++\skin-generator-master\skin-generator-master/resource/modinfo.tpl)", renderData,
+        RENDER_TEMPLATE_TO_FILE(R"(./resource//modinfo.tpl)", renderData,
                                 destPath / ModInfoWritePath);
-        RENDER_TEMPLATE_TO_FILE(R"(D:\C++\skin-generator-master\skin-generator-master/resource/modmain.tpl)", renderData,
+        RENDER_TEMPLATE_TO_FILE(R"(./resource//modmain.tpl)", renderData,
                                 destPath / ModMainWritePath);
-        RENDER_TEMPLATE_TO_FILE(R"(D:\C++\skin-generator-master\skin-generator-master/resource/init.tpl)", renderData, destPath / ModInitWritePath);
-
+        RENDER_TEMPLATE_TO_FILE(R"(./resource//init.tpl)", renderData, destPath / ModInitWritePath);
 
         LOG(info) << "generate success " << destPath;
-
+        std::cin.get(); // 等待用户输入
 
     } catch (const std::exception &e) {
         LOG(error) << "Exception caught: " << e.what() << std::endl;
