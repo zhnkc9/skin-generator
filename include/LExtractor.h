@@ -67,9 +67,10 @@ struct LAccessor {
         auto &&f = folder / path_prefix / path;
         std::filesystem::create_directories(dest.parent_path());
         if (!doCopy(f, dest)) {
-            auto &&p = path_prefix + "/" + path;
-            LOG(info) << "transfer: copy failed, try unzip " << p;
-            struct zip_file *file = zip_fopen(zipfile, p.c_str(), ZIP_FL_UNCHANGED);
+            std::filesystem::path prefix(path_prefix);
+            auto &&p = prefix / path ;
+            LOG(info) << "transfer: copy failed, try unzip " << p.string().c_str();
+            struct zip_file *file = zip_fopen(zipfile, p.string().c_str(), ZIP_FL_UNCHANGED);
             if (file != nullptr) {
                 doZipFileCopy(file, dest);
             } else {
