@@ -67,10 +67,9 @@ struct LAccessor {
         auto &&f = folder / path_prefix / path;
         std::filesystem::create_directories(dest.parent_path());
         if (!doCopy(f, dest)) {
-            std::filesystem::path prefix(path_prefix);
-            auto &&p = prefix / path ;
-            LOG(info) << "transfer: copy failed, try unzip " << p.string().c_str();
-            struct zip_file *file = zip_fopen(zipfile, p.string().c_str(), ZIP_FL_UNCHANGED);
+            auto &&p = path_prefix + path;
+            LOG(info) << "transfer: copy failed, try unzip " << p;
+            struct zip_file *file = zip_fopen(zipfile, p.c_str(), ZIP_FL_UNCHANGED);
             if (file != nullptr) {
                 doZipFileCopy(file, dest);
             } else {
@@ -95,7 +94,7 @@ public:
     std::string prefix;
 
     explicit AnimAccessor(const fs::path &folder, const std::string &prefix) : \
-    LAccessor(folder / "data", "anim/dynamic", folder / "data\\databundles\\anim_dynamic.zip") {
+    LAccessor(folder / "data", "anim/dynamic/", folder / "data\\databundles\\anim_dynamic.zip") {
         this->prefix = prefix;
     }
 
@@ -210,7 +209,7 @@ public :
     BigportraitsAccessor(const fs::path &folder, const std::string &prefix) : \
     XmlAccessor(folder, prefix) {
         this->folder = folder / "data";
-        this->path_prefix = "bigportraits";
+        this->path_prefix = "bigportraits/";
         auto &&zip = folder / "data\\databundles\\bigportraits.zip";
         this->zipfile = zip_open(zip.string().c_str(), ZIP_RDONLY, nullptr);
     }
